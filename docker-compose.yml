@@ -1,0 +1,50 @@
+version: '2'
+
+services:
+
+  ws-frontend:
+    build: ../ws-frontend/
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../ws-frontend:/app
+    links:
+      - rabbitmq
+      - frontend-api-nginx
+    environment:
+      QUEUE_HOST: rabbitmq
+      QUEUE_PORT: 5672
+      FRONTEND_ID: first_ws_frontend
+      FRONTEND_API_HOST: 'http://frontend-api-nginx'
+      FRONTEND_API_PORT: 80
+
+  frontend-api-nginx:
+    image: nginx:1.11
+    ports:
+      - "80:80"
+    volumes:
+      - ../frontend-api/:/app
+      - ./frontend-api/log:/var/log
+      - ./frontend-api-nginx.conf:/etc/nginx/conf.d/default.conf
+    links:
+      - frontend-api-php
+
+  frontend-api-php:
+    build: ../frontend-api
+    volumes:
+      - ../frontend-api:/app
+    links:
+      - redis
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+  rabbitmq:
+    image: rabbitmq:3.6.10-management
+    ports:
+      - "15672:15672"
+
+  redis:
+    image: redis:3.2.10
+    ports:
+      - "6379:6379"
